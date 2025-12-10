@@ -7,7 +7,7 @@
     <style>
         /* --- 1. GENERAL STYLES & BASE LAYOUT --- */
         body {
-            background-color: #0d1117; 
+            background-color: #0d1117;
             color: #c9d1d9;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
@@ -34,16 +34,16 @@
 
         .banner-left h1 {
             color: #ffffff;
-            font-size: 2.8em;
+            font-size: 2.4em;
             margin: 0 0 5px 0;
             font-weight: 900;
             text-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
         }
-        
+
         .banner-left p {
             color: #58a6ff;
             margin: 0;
-            font-size: 1.1em;
+            font-size: 1.05em;
         }
 
         .prize-visual {
@@ -54,26 +54,48 @@
             text-align: center;
             font-weight: bold;
             border: 3px solid #ffd700;
+            min-width: 200px;
         }
-        
+
         .prize-visual .label {
             font-size: 0.9em;
             opacity: 0.8;
             margin-bottom: 2px;
         }
-        
+
         .prize-visual .value {
-            font-size: 1.8em;
-            line-height: 1;
+            font-size: 1.4em;
+            line-height: 1.2;
+        }
+
+        /* --- RESPONSIVE BANNER --- */
+        @media (max-width: 768px) {
+            #top-banner {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 20px;
+            }
+            .prize-visual {
+                margin-top: 15px;
+                width: 100%;
+            }
         }
 
         /* --- 3. WEEKLY MISSION GRID --- */
         .weekly-grid-header {
-            font-size: 1.6em;
+            font-size: 1.4em;
             color: #ffffff;
             margin: 30px 0 20px 0;
             border-bottom: 2px solid #30363d;
             padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weekly-grid-header span.current-date {
+            font-size: 0.85em;
+            color: #8b949e;
         }
 
         .weekly-grid {
@@ -98,13 +120,13 @@
             transform: translateY(-5px);
             cursor: pointer;
         }
-        
+
         .week-card h3 {
             color: #58a6ff;
             margin: 0 0 10px 0;
-            font-size: 1.4em;
+            font-size: 1.2em;
         }
-        
+
         .week-card p {
             font-size: 0.9em;
             color: #8b949e;
@@ -115,7 +137,7 @@
             padding: 5px 10px;
             border-radius: 5px;
             font-weight: bold;
-            font-size: 0.8em;
+            font-size: 0.75em;
             text-transform: uppercase;
         }
 
@@ -124,13 +146,19 @@
         .status-upcoming { background-color: #f75d59; color: white; }
         .status-completed { background-color: #58a6ff; color: white; }
 
+        .week-highlight-tag {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 0.8em;
+            color: #e3b341;
+        }
+
         .week-card.locked {
-            opacity: 0.4;
+            opacity: 0.6;
             cursor: not-allowed;
             background-color: #10151a;
-            pointer-events: none;
         }
-        
+
         .locked-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -140,7 +168,7 @@
             justify-content: center;
             align-items: center;
             color: #e3b341;
-            font-size: 1.5em;
+            font-size: 1.2em;
             font-weight: bold;
         }
 
@@ -151,9 +179,15 @@
             padding: 20px;
             margin-top: 30px;
             border: 2px solid #58a6ff;
-            display: none; /* Initially hidden */
+            display: none;
         }
-        
+
+        #detail-title {
+            margin-bottom: 10px;
+            color: #ffffff;
+            font-size: 1.3em;
+        }
+
         .daily-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -166,24 +200,32 @@
             border-radius: 8px;
             padding: 15px;
             border: 1px solid #30363d;
+            position: relative;
+            transition: transform 0.2s, border-color 0.2s;
         }
-        
+
+        .daily-card.clickable:hover {
+            cursor: pointer;
+            border-color: #58a6ff;
+            transform: translateY(-3px);
+        }
+
         .daily-card h4 {
             color: #e3b341;
             margin: 0 0 10px 0;
-            font-size: 1.1em;
+            font-size: 1.05em;
         }
-        
+
         .daily-card p {
             font-size: 0.9em;
             margin: 5px 0;
         }
-        
+
         .daily-card .reward-label {
             color: #2ea44f;
             font-weight: bold;
         }
-        
+
         .mission-status {
             float: right;
             padding: 3px 8px;
@@ -194,14 +236,67 @@
         .status-pending { background-color: #f75d59; color: white; }
         .status-ready { background-color: #58a6ff; color: white; }
         .status-claimed { background-color: #2ea44f; color: white; }
+        .status-locked { background-color: #30363d; color: #8b949e; }
+
+        .daily-tagline {
+            font-size: 0.8em;
+            color: #8b949e;
+        }
+
+        .daily-locked-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            color: #e3b341;
+            text-transform: uppercase;
+        }
 
         /* --- 5. MODAL STYLES (For Activation & T&C) --- */
-        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0, 0, 0, 0.9); padding-top: 60px; }
-        .modal-content { background-color: #161b22; margin: 5% auto; padding: 30px; border: 1px solid #e3b341; width: 80%; max-width: 650px; border-radius: 12px; box-shadow: 0 8px 30px rgba(227, 179, 65, 0.4); }
-        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
-        .close-btn:hover, .close-btn:focus { color: #f75d59; text-decoration: none; cursor: pointer; }
-        .modal-title { color: #ffffff; font-size: 1.8em; margin-bottom: 15px; border-bottom: 1px solid #30363d; padding-bottom: 10px; }
-        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #161b22;
+            margin: 5% auto;
+            padding: 30px;
+            border: 1px solid #e3b341;
+            width: 90%;
+            max-width: 650px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(227, 179, 65, 0.4);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: #f75d59;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .modal-title {
+            color: #ffffff;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 10px;
+        }
+
         .activation-box {
             background-color: #1f2a3a;
             padding: 20px;
@@ -217,9 +312,11 @@
             text-align: center;
             margin: 10px 0;
             display: block;
+            word-break: break-all;
         }
-        
-        .opt-in-btn {
+
+        .opt-in-btn,
+        .goto-profile-btn {
             background-color: #2ea44f;
             color: white;
             border: none;
@@ -229,20 +326,36 @@
             cursor: pointer;
             width: 100%;
             margin-top: 15px;
-            font-size: 1.1em;
+            font-size: 1.05em;
         }
-        
+
+        .opt-in-btn.disabled {
+            background-color: #21262d !important;
+            cursor: default;
+        }
+
+        .goto-profile-btn {
+            background-color: #f75d59;
+        }
+
+        .copy-hint {
+            font-size: 0.85em;
+            text-align: center;
+            color: #8b949e;
+            margin-top: 5px;
+        }
+
         .mission-tnc {
             margin-top: 20px;
             border-top: 1px dashed #30363d;
             padding-top: 15px;
         }
-        
+
         .mission-tnc h4 {
             color: #58a6ff;
             margin-bottom: 10px;
         }
-        
+
         .mission-tnc ul {
             list-style-type: disc;
             padding-left: 20px;
@@ -250,6 +363,20 @@
             color: #8b949e;
         }
 
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #161b22;
+            padding: 10px 20px;
+            border-radius: 999px;
+            border: 1px solid #2ea44f;
+            color: #ffffff;
+            font-size: 0.85em;
+            display: none;
+            z-index: 999;
+        }
     </style>
 </head>
 <body>
@@ -257,7 +384,7 @@
     <div id="top-banner">
         <div class="banner-left">
             <h1>🏆 WEEKLY QUEST CHALLENGE</h1>
-            <p>Conquer the weekly targets to unlock massive rewards.</p>
+            <p>Unlock a new mission every day. Pass on yesterday, lock for tomorrow. Today is your shot.</p>
         </div>
         <div class="prize-visual">
             <div class="label">WEEKLY GRAND PRIZE</div>
@@ -267,60 +394,160 @@
 
     <div class="container">
 
-        <h2 class="weekly-grid-header">📅 Active Weekly Missions</h2>
-        
-        <div class="weekly-grid" id="weekly-grid">
-            </div>
-        
+        <h2 class="weekly-grid-header">
+            📅 Weekly Missions Overview
+            <span class="current-date" id="current-date-label"></span>
+        </h2>
+
+        <div class="weekly-grid" id="weekly-grid"></div>
+
         <hr style="border-color: #30363d;">
 
         <div id="daily-mission-detail">
-            <h2 id="detail-title" style="margin-bottom: 10px; color: #ffffff;">Daily Missions for Week 2: La Liga Fury</h2>
-            <p style="color: #f75d59;">Click on any daily mission below to view T&C and activate with a voucher code.</p>
-            <div class="daily-grid" id="daily-grid">
-                </div>
+            <h2 id="detail-title">Daily Missions</h2>
+            <p style="color: #f75d59; font-size: 0.9em;">
+                Only today’s mission can be activated. Previous days are marked as PASS, upcoming days are LOCKED.
+            </p>
+            <div class="daily-grid" id="daily-grid"></div>
         </div>
 
     </div>
 
+    <!-- MODAL -->
     <div id="missionModal" class="modal">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
             <h2 class="modal-title" id="modalDailyTitle"></h2>
-            
+
             <div class="activation-box">
                 <p style="text-align: center; color: #e3b341; font-weight: bold;">MISSION ACTIVATION IS REQUIRED</p>
-                <p style="text-align: center; font-size: 0.9em;">Redeem this unique voucher code in the cashier to start tracking your progress.</p>
+                <p style="text-align: center; font-size: 0.9em;">
+                    Copy this code and redeem it in the cashier path <strong>/myprofile</strong> to join today’s quest.
+                </p>
                 <span class="voucher-code" id="modalVoucherCode">WEEK2-MON-PASS</span>
-                <button class="opt-in-btn" id="modalOptInBtn">REDEEM VOUCHER & ACTIVATE QUEST</button>
+
+                <button class="opt-in-btn" id="modalOptInBtn">COPY CODE & ACTIVATE QUEST</button>
+                <p class="copy-hint">After copying, you will still need to redeem it on <strong>/myprofile</strong>.</p>
+
+                <button class="goto-profile-btn" id="gotoProfileBtn">
+                    GO TO MY PROFILE & REDEEM
+                </button>
             </div>
-            
+
             <div class="mission-tnc">
                 <h4>✅ Mission Terms & Conditions:</h4>
-                <ul id="modalTNCList">
-                    </ul>
+                <ul id="modalTNCList"></ul>
                 <h4 style="color: #2ea44f;">🎁 Reward:</h4>
-                <p id="modalRewardValue" style="font-size: 1.1em; font-weight: bold; color: #2ea44f;">€5 Free Bet upon completion.</p>
+                <p id="modalRewardValue" style="font-size: 1.05em; font-weight: bold; color: #2ea44f;">
+                    €5 Free Bet upon completion.
+                </p>
             </div>
-            
+
         </div>
     </div>
 
+    <div class="toast" id="toast">Voucher code copied!</div>
+
     <script>
-        // --- 5.1. QUEST DATA STRUCTURE ---
+        // --- 5.1. QUEST DATA STRUCTURE (sample dates; replace with your real ones) ---
+        // Use ISO dates for logic; label is just display text.
         const weeklyQuests = [
-            { id: 1, name: 'Week 1: Pre-Season Blitz', status: 'Completed', class: 'status-completed', date: 'Jan 1 - 7', days: [] },
-            { id: 2, name: 'Week 2: La Liga Fury', status: 'Running', class: 'status-running', date: 'Jan 8 - 14', days: [
-                { day: 'Mon 8', title: 'Goal Scorer Rush', status: 'Pending', code: 'LIGA-MON-08', reward: '€5 Free Bet', tnc: ['Bet min €10 on any La Liga match.', 'Win a Single Bet where the Goal Scorer is correctly predicted.', 'Min Odds 1.80.'], redeemed: false },
-                { day: 'Tue 9', title: 'Combo King', status: 'Ready', code: 'LIGA-TUE-09', reward: '€10 Free Bet', tnc: ['Win 2 Combo bets with at least 3 legs.', 'Total min odds 3.00.', 'Applies to any Soccer event.'], redeemed: false },
-                { day: 'Wed 10', title: 'Pass Tracker', status: 'Pending', code: 'LIGA-WED-10', reward: '€3 Free Bet', tnc: ['Place a bet on a player to register an assist.', 'Bet amount min €5.', 'Must be a winning bet.'], redeemed: false },
-                { day: 'Thu 11', title: 'Double Chance Challenge', status: 'Pending', code: 'LIGA-THU-11', reward: '€5 Free Bet', tnc: ['Place 3 winning Double Chance bets.', 'Min stake €5 per bet.', 'Applies to any sport.'], redeemed: false },
-                { day: 'Fri 12', title: 'Weekend Accumulator', status: 'Pending', code: 'LIGA-FRI-12', reward: '€20 Free Bet', tnc: ['Place one accumulator with 5 legs or more.', 'Min stake €20.', 'Min odds per leg 1.30.'], redeemed: false },
-            ] },
-            { id: 3, name: 'Week 3: Champions League', status: 'Upcoming', class: 'status-upcoming', date: 'Jan 15 - 21', days: [], locked: true },
-            { id: 4, name: 'Week 4: Global Sports Mix', status: 'Upcoming', class: 'status-upcoming', date: 'Jan 22 - 28', days: [], locked: true },
+            {
+                id: 1,
+                name: 'Week 1: Pre-Season Blitz',
+                startDate: '2025-01-01',
+                endDate: '2025-01-07',
+                days: [] // example: already finished week with no detail needed
+            },
+            {
+                id: 2,
+                name: 'Week 2: La Liga Fury',
+                startDate: '2025-01-08',
+                endDate: '2025-01-14',
+                days: [
+                    {
+                        date: '2025-01-08',
+                        label: 'Mon 8',
+                        title: 'Goal Scorer Rush',
+                        code: 'LIGA-MON-08',
+                        reward: '€5 Free Bet',
+                        provider: 'La Liga',
+                        tnc: [
+                            'Bet min €10 on any La Liga match.',
+                            'Win a Single Bet where the Goal Scorer is correctly predicted.',
+                            'Min Odds 1.80.'
+                        ]
+                    },
+                    {
+                        date: '2025-01-09',
+                        label: 'Tue 9',
+                        title: 'Combo King',
+                        code: 'LIGA-TUE-09',
+                        reward: '€10 Free Bet',
+                        provider: 'Any Soccer',
+                        tnc: [
+                            'Win 2 Combo bets with at least 3 legs.',
+                            'Total min odds 3.00.',
+                            'Applies to any Soccer event.'
+                        ]
+                    },
+                    {
+                        date: '2025-01-10',
+                        label: 'Wed 10',
+                        title: 'Pass Tracker',
+                        code: 'LIGA-WED-10',
+                        reward: '€3 Free Bet',
+                        provider: 'Player Specials',
+                        tnc: [
+                            'Place a bet on a player to register an assist.',
+                            'Bet amount min €5.',
+                            'Must be a winning bet.'
+                        ]
+                    },
+                    {
+                        date: '2025-01-11',
+                        label: 'Thu 11',
+                        title: 'Double Chance Challenge',
+                        code: 'LIGA-THU-11',
+                        reward: '€5 Free Bet',
+                        provider: 'Multi Sports',
+                        tnc: [
+                            'Place 3 winning Double Chance bets.',
+                            'Min stake €5 per bet.',
+                            'Applies to any sport.'
+                        ]
+                    },
+                    {
+                        date: '2025-01-12',
+                        label: 'Fri 12',
+                        title: 'Weekend Accumulator',
+                        code: 'LIGA-FRI-12',
+                        reward: '€20 Free Bet',
+                        provider: 'Any Sportsbook',
+                        tnc: [
+                            'Place one accumulator with 5 legs or more.',
+                            'Min stake €20.',
+                            'Min odds per leg 1.30.'
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 3,
+                name: 'Week 3: Champions League Heat',
+                startDate: '2025-01-15',
+                endDate: '2025-01-21',
+                days: []
+            },
+            {
+                id: 4,
+                name: 'Week 4: Global Sports Mix',
+                startDate: '2025-01-22',
+                endDate: '2025-01-28',
+                days: []
+            }
         ];
-        
+
         // --- 5.2. DOM ELEMENTS & STATE ---
         const weeklyGrid = document.getElementById('weekly-grid');
         const dailyDetailSection = document.getElementById('daily-mission-detail');
@@ -333,116 +560,284 @@
         const modalOptInBtn = document.getElementById('modalOptInBtn');
         const modalTNCList = document.getElementById('modalTNCList');
         const modalRewardValue = document.getElementById('modalRewardValue');
-        
+        const gotoProfileBtn = document.getElementById('gotoProfileBtn');
+        const currentDateLabel = document.getElementById('current-date-label');
+        const toast = document.getElementById('toast');
+
         let activeWeek = null;
         let selectedDailyMission = null;
 
-        // --- 5.3. RENDER FUNCTIONS ---
+        // Utility: get YYYY-MM-DD from Date
+        function formatDateYMD(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
 
+        const now = new Date();
+        const todayStr = formatDateYMD(now);
+        currentDateLabel.textContent = `(Today: ${todayStr})`;
+
+        function daysBetween(aStr, bStr) {
+            const a = new Date(aStr + 'T00:00:00');
+            const b = new Date(bStr + 'T00:00:00');
+            return Math.round((b - a) / (1000 * 60 * 60 * 24));
+        }
+
+        // --- 5.3. RENDER WEEKLY CARDS WITH LOCK/PASS LOGIC ---
         function renderWeeklyCards() {
             weeklyGrid.innerHTML = '';
+
             weeklyQuests.forEach(week => {
+                const start = week.startDate;
+                const end = week.endDate;
+
+                let statusLabel;
+                let badgeClass;
+                let locked = false;
+                let highlightText = '';
+
+                if (todayStr < start) {
+                    statusLabel = 'Upcoming';
+                    badgeClass = 'status-upcoming';
+                    locked = true;
+
+                    const diff = daysBetween(todayStr, start);
+                    highlightText = diff === 1
+                        ? 'Unlocks in 1 day'
+                        : `Unlocks in ${diff} days`;
+                } else if (todayStr > end) {
+                    statusLabel = 'Completed';
+                    badgeClass = 'status-completed';
+                    locked = false; // allow viewing past missions for info
+                    highlightText = 'All missions closed.';
+                } else {
+                    statusLabel = 'Running';
+                    badgeClass = 'status-running';
+                    locked = false;
+                    highlightText = 'Tap to view this week’s daily quests.';
+                }
+
                 const card = document.createElement('div');
-                card.className = `week-card ${week.locked ? 'locked' : ''}`;
+                card.className = `week-card ${locked ? 'locked' : ''}`;
                 card.innerHTML = `
-                    <span class="week-status-badge ${week.class}">${week.status}</span>
+                    <span class="week-status-badge ${badgeClass}">${statusLabel}</span>
                     <h3>${week.name}</h3>
-                    <p>Duration: ${week.date}</p>
-                    <p>${week.locked ? 'Mission structure not yet finalized.' : 'Click to see daily missions.'}</p>
-                    ${week.locked ? `<div class="locked-overlay">🔒 LOCKED</div>` : ''}
+                    <p>Duration: ${week.startDate} → ${week.endDate}</p>
+                    <p>${highlightText}</p>
+                    ${locked ? `<div class="locked-overlay">🔒 LOCKED</div>` : ''}
+                    <span class="week-highlight-tag">${statusLabel === 'Running' ? '🔥 Current Week' : ''}</span>
                 `;
-                if (!week.locked) {
+
+                if (!locked) {
                     card.onclick = () => showDailyMissions(week);
                 }
+
                 weeklyGrid.appendChild(card);
             });
         }
 
+        // --- 5.4. DAILY MISSIONS WITH TODAY / PASS / LOCK STATUS ---
         function showDailyMissions(week) {
             activeWeek = week;
             detailTitle.textContent = `Daily Missions for ${week.name}`;
             dailyGrid.innerHTML = '';
 
+            if (!week.days || week.days.length === 0) {
+                dailyGrid.innerHTML = `
+                    <p style="color:#8b949e; font-size:0.9em;">
+                        Daily mission structure for this week is not configured yet.
+                    </p>
+                `;
+                dailyDetailSection.style.display = 'block';
+                return;
+            }
+
             week.days.forEach(mission => {
-                // Check if redeemed status is stored locally for persistence in prototype
-                if (localStorage.getItem(mission.code) === 'redeemed') {
+                // Local storage check (prototype "opt-in" memory)
+                if (localStorage.getItem(`quest-optin-${mission.code}`) === '1') {
                     mission.redeemed = true;
-                    mission.status = 'Ready'; // Assuming 'Ready' means tracking is active
+                }
+
+                const missionDateStr = mission.date;
+                let badgeLabel = '';
+                let badgeClass = '';
+                let clickable = false;
+                let tagline = '';
+                let lockedOverlayText = '';
+
+                if (missionDateStr < todayStr) {
+                    // Past days = PASS or COMPLETED
+                    if (mission.redeemed) {
+                        badgeLabel = 'COMPLETED';
+                        badgeClass = 'status-claimed';
+                        tagline = 'You have already activated this mission.';
+                    } else {
+                        badgeLabel = 'PASS';
+                        badgeClass = 'status-pending';
+                        tagline = 'This day has passed. Mission is no longer available.';
+                    }
+                    clickable = false;
+                } else if (missionDateStr === todayStr) {
+                    // TODAY = unlock
+                    if (mission.redeemed) {
+                        badgeLabel = 'ACTIVE';
+                        badgeClass = 'status-ready';
+                        tagline = 'You have activated today’s mission. Complete the requirements to get your reward.';
+                    } else {
+                        badgeLabel = 'TODAY';
+                        badgeClass = 'status-ready';
+                        tagline = 'Tap to copy the voucher code & join today’s quest.';
+                    }
+                    clickable = true;
+                } else {
+                    // Future days = LOCKED
+                    badgeLabel = 'LOCKED';
+                    badgeClass = 'status-locked';
+                    tagline = 'Mission will unlock on this date.';
+                    clickable = false;
+                    lockedOverlayText = '🔒 LOCKED';
                 }
 
                 const card = document.createElement('div');
                 card.className = 'daily-card';
-                card.onclick = () => openActivationModal(mission);
+                if (clickable) {
+                    card.classList.add('clickable');
+                    card.onclick = () => openActivationModal(mission);
+                }
+
                 card.innerHTML = `
-                    <span class="mission-status ${mission.redeemed ? 'status-ready' : 'status-pending'}">${mission.redeemed ? 'ACTIVE' : 'PENDING'}</span>
-                    <h4>${mission.day}: ${mission.title}</h4>
+                    <span class="mission-status ${badgeClass}">${badgeLabel}</span>
+                    <h4>${mission.label}: ${mission.title}</h4>
                     <p class="reward-label">Reward: ${mission.reward}</p>
-                    <p style="font-size: 0.8em; color: #8b949e;">Criteria: ${mission.tnc[0]}</p>
+                    <p class="daily-tagline">Provider/Event: ${mission.provider || 'Sportsbook'}</p>
+                    <p style="font-size: 0.8em; color: #8b949e;">
+                        Criteria: ${mission.tnc[0]}
+                    </p>
+                    <p class="daily-tagline">${tagline}</p>
+                    ${lockedOverlayText ? `<div class="daily-locked-overlay">${lockedOverlayText}</div>` : ''}
                 `;
+
                 dailyGrid.appendChild(card);
             });
 
             dailyDetailSection.style.display = 'block';
         }
 
+        // --- 5.5. MODAL + OPT-IN / COPY / REDIRECT ---
         function openActivationModal(mission) {
             selectedDailyMission = mission;
-            modalDailyTitle.textContent = `${mission.day}: ${mission.title}`;
+            modalDailyTitle.textContent = `${mission.label}: ${mission.title}`;
             modalVoucherCode.textContent = mission.code;
             modalRewardValue.textContent = `${mission.reward} upon completion.`;
 
             // Render T&C list
             modalTNCList.innerHTML = mission.tnc.map(item => `<li>${item}</li>`).join('');
 
-            // Set button state
+            // Button states
             if (mission.redeemed) {
-                modalOptInBtn.disabled = true;
-                modalOptInBtn.textContent = 'MISSION ACTIVATED (Tracking Progress)';
-                modalOptInBtn.style.backgroundColor = '#21262d';
+                modalOptInBtn.textContent = 'MISSION ALREADY ACTIVATED';
+                modalOptInBtn.classList.add('disabled');
             } else {
-                modalOptInBtn.disabled = false;
-                modalOptInBtn.textContent = 'REDEEM VOUCHER & ACTIVATE QUEST';
-                modalOptInBtn.style.backgroundColor = '#2ea44f';
-                modalOptInBtn.onclick = redeemVoucher;
+                modalOptInBtn.textContent = 'COPY CODE & ACTIVATE QUEST';
+                modalOptInBtn.classList.remove('disabled');
             }
 
             modal.style.display = 'block';
         }
 
-        function redeemVoucher() {
+        function showToast(text) {
+            toast.textContent = text;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 1800);
+        }
+
+        async function handleOptIn() {
             if (!selectedDailyMission) return;
-            
-            // 1. Simulate Voucher Redeem (This is the Opt-in action)
-            localStorage.setItem(selectedDailyMission.code, 'redeemed');
+
+            const code = selectedDailyMission.code;
+
+            // 1. Copy to clipboard (if possible)
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(code);
+                    showToast('Voucher code copied to clipboard!');
+                } else {
+                    // Fallback: select text in the modal
+                    showToast('Please manually copy the code above.');
+                }
+            } catch (e) {
+                showToast('Please manually copy the code above.');
+            }
+
+            // 2. Mark as "opted-in" in local storage (front-end prototype)
+            localStorage.setItem(`quest-optin-${code}`, '1');
             selectedDailyMission.redeemed = true;
 
-            // 2. Update modal
-            modalOptInBtn.disabled = true;
-            modalOptInBtn.textContent = 'MISSION ACTIVATED (Tracking Progress)';
-            modalOptInBtn.style.backgroundColor = '#21262d';
-            
-            // 3. Update the main page view
-            showDailyMissions(activeWeek);
+            // 3. (OPTIONAL) Send to backend so your team can track opt-ins
+            // Uncomment & adjust when backend is ready:
+            /*
+            try {
+                await fetch('/api/quests/optin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voucherCode: code })
+                });
+            } catch (err) {
+                console.warn('Failed to notify backend about opt-in', err);
+            }
+            */
 
-            alert(`Voucher ${selectedDailyMission.code} redeemed! Your mission is now active. Complete the daily T&C to earn your ${selectedDailyMission.reward}.`);
-        }
+            // 4. Update modal button UI
+            modalOptInBtn.textContent = 'MISSION ACTIVATED (CODE COPIED)';
+            modalOptInBtn.classList.add('disabled');
 
-        // --- 5.4. MODAL CLOSING LOGIC ---
-        closeBtn.onclick = function() {
-            modal.style.display = 'none';
-        }
-
-        window.onclick = function(event) {
-            if (event.target == modal) {
-                modal.style.display = 'none';
+            // 5. Re-render daily cards to show ACTIVE status
+            if (activeWeek) {
+                showDailyMissions(activeWeek);
             }
         }
 
-        // --- 5.5. INITIAL RUN ---
+        function goToMyProfile() {
+            // Ensure we stay on the same domain: rico.bet / ricobet.net / ricobet.com.mx etc.
+            const origin = window.location.origin;
+            const currentPath = window.location.pathname + window.location.search + window.location.hash;
+
+            // Adjust the parameter name if your backend expects something else (e.g. returnUrl)
+            const returnParamName = 'return';
+            const profileUrl = `${origin}/myprofile?${returnParamName}=${encodeURIComponent(currentPath)}`;
+
+            window.location.href = profileUrl;
+        }
+
+        // --- 5.6. MODAL CLOSING LOGIC ---
+        closeBtn.onclick = function () {
+            modal.style.display = 'none';
+        };
+
+        window.onclick = function (event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        };
+
+        modalOptInBtn.addEventListener('click', () => {
+            if (!modalOptInBtn.classList.contains('disabled')) {
+                handleOptIn();
+            }
+        });
+
+        gotoProfileBtn.addEventListener('click', goToMyProfile);
+
+        // --- 5.7. INITIAL RUN ---
         document.addEventListener('DOMContentLoaded', () => {
             renderWeeklyCards();
-            // Optional: Automatically show the running week details on load
-            const runningWeek = weeklyQuests.find(w => w.status === 'Running');
+
+            // Auto-open the running week if any
+            const runningWeek = weeklyQuests.find(w => todayStr >= w.startDate && todayStr <= w.endDate);
             if (runningWeek) {
                 showDailyMissions(runningWeek);
             }
