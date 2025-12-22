@@ -1,4 +1,4 @@
-import { json, handleOptions, requireAdmin } from "../../_utils.js";
+import { json, handleOptions, requireAdmin, safeJsonArray } from "../../../_utils.js";
 
 export async function onRequest({ request, env }) {
   const opt = handleOptions(request);
@@ -7,38 +7,55 @@ export async function onRequest({ request, env }) {
   try {
     requireAdmin(request, env);
 
-    const weeks = await env.DB.prepare(`
-      SELECT id, name, start_date as startDate, end_date as endDate, description, created_at as createdAt, updated_at as updatedAt
+    const weeksRes = await env.DB.prepare(`
+      SELECT id, name, start_date as startDate, end_date as endDate, description
       FROM quest_weeks
       ORDER BY start_date DESC
     `).all();
 
-    const days = await env.DB.prepare(`
+    const daysRes = await env.DB.prepare(`
       SELECT
-        id, week_id as weekId, date, label, title, provider, reward,
+        id,
+        week_id as weekId,
+        date,
+        label,
+        title,
+        provider,
+        reward,
         voucher_code as voucherCode,
         tnc_json as tncJson,
         admin_status as adminStatus,
-        final_tag as finalTag,
-        created_at as createdAt, updated_at as updatedAt
+        final_tag as finalTag
       FROM quest_days
       ORDER BY date ASC
     `).all();
 
-    const settings = await env.DB.prepare(`
-      SELECT key, value FROM quest_settings
+    const settingsRes = await env.DB.prepare(`
+      SELECT key, value
+      FROM quest_settings
     `).all();
+
+    const days = (daysRes.results || []).map(d => ({
+      id: d.id,
+      weekId: d.weekId,
+      date: d.date,
+      label: d.label,
+      title: d.title,
+      provider: d.provider,
+      reward: d.reward,
+      voucherCode: d.voucherCode,
+      adminStatus: d.adminStatus || "auto",
+      finalTag: d.finalTag || "",
+      tnc: safeJsonArray(d.tncJson)
+    }));
 
     return json({
       ok: true,
-      weeks: weeks.results || [],
-      days: (days.results || []).map(d => ({
-        ...d,
-        tnc: (() => { try { const a = JSON.parse(d.tncJson || "[]"); return Array.isArray(a) ? a : []; } catch { return []; } })()
-      })),
-      settings: settings.results || []
+      weeks: weeksRes.results || [],
+      days,
+      settings: settingsRes.results || []
     });
   } catch (e) {
-    return json({ ok:false, error:String(e?.message||e) }, e?.message==="Unauthorized"?401:500);
+    return json({ ok: false, error: String(e?.message || e) }, e?.message === "Unauthorized" ? 401 : 500);
   }
 }
