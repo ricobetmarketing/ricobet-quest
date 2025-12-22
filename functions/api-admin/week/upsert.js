@@ -1,4 +1,4 @@
-import { json, handleOptions, requireAdmin } from "../../_utils.js";
+import { json, handleOptions, requireAdmin } from "../../../_utils.js";
 
 export async function onRequest({ request, env }) {
   const opt = handleOptions(request);
