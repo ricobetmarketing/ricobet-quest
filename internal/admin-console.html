@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Quest Backend Control (Cloudflare)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+  <style>
+    :root { --primary-color:#198754; --sidebar-width:260px; }
+    body { background:#f8f9fa; font-size:14px; }
+    #sidebar{
+      width:var(--sidebar-width); min-height:100vh; background:#111827;
+      position:fixed; top:0; left:0; padding-top:18px; color:#fff; z-index:1000;
+      box-shadow:4px 0 15px rgba(0,0,0,.35);
+    }
+    #sidebar h4 { font-size:1.05rem; letter-spacing:.04em; }
+    #sidebar .nav-link{
+      color:#9ca3af; padding:12px 20px; display:flex; align-items:center;
+      transition:.2s; font-size:.96rem; border-radius:0;
+    }
+    #sidebar .nav-link i{ margin-right:10px; }
+    #sidebar .nav-link:hover, #sidebar .nav-link.active{
+      background:linear-gradient(135deg,#22c55e,#16a34a); color:#022c22;
+    }
+    #content{ margin-left:var(--sidebar-width); padding:20px; }
+    .card-header{ background-color:var(--primary-color)!important; color:#fff!important; font-weight:700; }
+    .tab-content .tab-pane{ display:none; }
+    .tab-content .tab-pane.active{ display:block; }
+
+    .text-small{ font-size:12px; }
+    .status-text{ font-size:12px; margin-top:6px; min-height:18px; }
+    .status-ok{ color:#16a34a; }
+    .status-error{ color:#dc2626; }
+
+    textarea { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; font-size:13px; }
+    .mono { font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+
+    .list-item { cursor:pointer; }
+    .list-item.active { border-left: 5px solid #198754; background:#f0fff4; }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h4 class="text-center mb-4 text-warning">Quest Backend</h4>
+  <nav class="nav flex-column">
+    <a class="nav-link active" id="weeks-tab" href="#weeks" onclick="showTab('weeks')">
+      <i class="fas fa-calendar-week"></i> Weeks & Missions
+    </a>
+    <a class="nav-link" id="settings-tab" href="#settings" onclick="showTab('settings')">
+      <i class="fas fa-gear"></i> Settings
+    </a>
+    <a class="nav-link" id="optins-tab" href="#optins" onclick="showTab('optins')">
+      <i class="fas fa-bolt"></i> Opt-in Logs
+    </a>
+    <a class="nav-link" id="backup-tab" href="#backup" onclick="showTab('backup')">
+      <i class="fas fa-database"></i> Export / Import
+    </a>
+  </nav>
+</div>
+
+<div id="content">
+  <h1 class="h4 mb-2">Quest Backend Control</h1>
+  <p class="text-muted text-small mb-3">
+    This admin controls weekly + daily quests (voucher code, title, reward, T&amp;C) stored in <b>Cloudflare D1</b>.
+    Player frontend reads via <span class="mono">GET /api/quests/weeks</span>.
+  </p>
+  <hr>
+
+  <div class="row g-3 mb-3">
+    <div class="col-md-4">
+      <label class="form-label text-small">Admin Key (X-Admin-Key)</label>
+      <input id="adminKey" type="password" class="form-control form-control-sm" placeholder="Paste ADMIN_KEY">
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <button class="btn btn-sm btn-secondary w-100" id="btnPing">
+        <i class="fas fa-sync"></i> Load Current Data
+      </button>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <div id="topStatus" class="status-text"></div>
+    </div>
+  </div>
+
+  <div class="tab-content">
+
+    <!-- WEEKS TAB -->
+    <div class="tab-pane active" id="weeks">
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <div class="card shadow-sm">
+            <div class="card-header"><i class="fas fa-list"></i> Week List</div>
+            <div class="card-body">
+              <div class="d-flex gap-2 mb-2">
+                <button class="btn btn-sm btn-success" id="btnNewWeek"><i class="fas fa-plus"></i> New Week</button>
+                <button class="btn btn-sm btn-outline-secondary" id="btnRefreshWeeks"><i class="fas fa-rotate"></i></button>
+              </div>
+              <div class="list-group" id="weekList"></div>
+              <div id="weeksStatus" class="status-text"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          <div class="card shadow-sm mb-3">
+            <div class="card-header"><i class="fas fa-pen"></i> Week Editor</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label text-small">Week ID</label>
+                  <input id="wId" class="form-control form-control-sm" placeholder="week-2026-01">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label text-small">Week Name</label>
+                  <input id="wName" class="form-control form-control-sm" placeholder="Week 1: Comeback Quest">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label text-small">Start Date</label>
+                  <input id="wStart" type="date" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label text-small">End Date</label>
+                  <input id="wEnd" type="date" class="form-control form-control-sm">
+                </div>
+                <div class="col-12">
+                  <label class="form-label text-small">Description</label>
+                  <input id="wDesc" class="form-control form-control-sm" placeholder="Tap to view this week’s daily quests.">
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-sm btn-primary" id="btnSaveWeek"><i class="fas fa-save"></i> Save Week</button>
+                <button class="btn btn-sm btn-danger" id="btnDeleteWeek"><i class="fas fa-trash"></i> Delete Week</button>
+                <div id="weekEditStatus" class="status-text ms-2"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="fas fa-calendar-day"></i> Daily Missions (for selected week)</span>
+              <button class="btn btn-sm btn-success" id="btnNewDay"><i class="fas fa-plus"></i> Add Mission</button>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-5">
+                  <div class="list-group" id="dayList"></div>
+                </div>
+
+                <div class="col-md-7">
+                  <div class="border rounded p-3 bg-light">
+                    <div class="text-muted text-small mb-2">Mission Editor</div>
+
+                    <input type="hidden" id="dId">
+                    <div class="row g-2">
+                      <div class="col-md-6">
+                        <label class="form-label text-small">Date</label>
+                        <input id="dDate" type="date" class="form-control form-control-sm">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label text-small">Label</label>
+                        <input id="dLabel" class="form-control form-control-sm" placeholder="DAY 1 / MON">
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label text-small">Title</label>
+                        <input id="dTitle" class="form-control form-control-sm" placeholder="Place 10 bets today">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label text-small">Provider</label>
+                        <input id="dProvider" class="form-control form-control-sm" placeholder="Sportsbook / Slots">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label text-small">Reward</label>
+                        <input id="dReward" class="form-control form-control-sm" placeholder="10 Free Spins">
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label text-small">Voucher Code</label>
+                        <input id="dVoucher" class="form-control form-control-sm mono" placeholder="WEEK1-DAY1-ABC123">
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label text-small">Admin Status</label>
+                        <select id="dAdminStatus" class="form-select form-select-sm">
+                          <option value="auto">auto</option>
+                          <option value="forceLocked">forceLocked</option>
+                          <option value="forceToday">forceToday</option>
+                          <option value="forcePass">forcePass</option>
+                          <option value="forceClaimed">forceClaimed</option>
+                        </select>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label text-small">Final Tag</label>
+                        <select id="dFinalTag" class="form-select form-select-sm">
+                          <option value="">(none)</option>
+                          <option value="final">final</option>
+                          <option value="boost">boost</option>
+                        </select>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label text-small">T&amp;C (one per line)</label>
+                        <textarea id="dTnc" class="form-control" rows="6" placeholder="Valid today only&#10;One per player&#10;Wagering applies"></textarea>
+                      </div>
+                    </div>
+
+                    <div class="d-flex gap-2 mt-3">
+                      <button class="btn btn-sm btn-primary" id="btnSaveDay"><i class="fas fa-save"></i> Save Mission</button>
+                      <button class="btn btn-sm btn-danger" id="btnDeleteDay"><i class="fas fa-trash"></i> Delete Mission</button>
+                      <div id="dayEditStatus" class="status-text ms-2"></div>
+                    </div>
+                  </div>
+                  <div class="text-muted text-small mt-2">
+                    Tip: Keep voucher codes unique (D1 enforces unique index).
+                  </div>
+                </div>
+              </div>
+
+              <div id="daysStatus" class="status-text"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-pane" id="settings">
+      <div class="card shadow-sm">
+        <div class="card-header"><i class="fas fa-gear"></i> Settings</div>
+        <div class="card-body">
+          <label class="form-label text-small">Grand Prize (top banner)</label>
+          <input id="grandPrize" class="form-control form-control-sm" placeholder="$10,000 FREE BET">
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-sm btn-primary" id="btnSavePrize"><i class="fas fa-save"></i> Save</button>
+            <div id="settingsStatus" class="status-text ms-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTINS TAB -->
+    <div class="tab-pane" id="optins">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="fas fa-bolt"></i> Opt-in Logs</span>
+          <button class="btn btn-sm btn-outline-light" id="btnLoadOptins"><i class="fas fa-rotate"></i> Refresh</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Created</th>
+                  <th>Voucher Code</th>
+                  <th>Alias (optional)</th>
+                </tr>
+              </thead>
+              <tbody id="optinTbody"></tbody>
+            </table>
+          </div>
+          <div id="optinsStatus" class="status-text"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPORT / IMPORT TAB -->
+    <div class="tab-pane" id="backup">
+      <div class="card shadow-sm mb-3">
+        <div class="card-header"><i class="fas fa-database"></i> Export</div>
+        <div class="card-body">
+          <button class="btn btn-sm btn-secondary" id="btnExport"><i class="fas fa-download"></i> Download JSON</button>
+          <div id="exportStatus" class="status-text"></div>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header"><i class="fas fa-upload"></i> Import</div>
+        <div class="card-body">
+          <p class="text-muted text-small">Import will replace current weeks/days/settings in D1.</p>
+          <input id="importFile" type="file" class="form-control form-control-sm" accept="application/json">
+          <button class="btn btn-sm btn-danger mt-2" id="btnImport"><i class="fas fa-triangle-exclamation"></i> Import & Replace</button>
+          <div id="importStatus" class="status-text"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js"></script>
+
+<script>
+  // ---------- Tab switching ----------
+  function showTab(tabId) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('#sidebar .nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.getElementById(tabId + '-tab').classList.add('active');
+  }
+
+  function setStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg || "";
+    el.classList.remove("status-ok","status-error");
+    if (type === "ok") el.classList.add("status-ok");
+    if (type === "error") el.classList.add("status-error");
+  }
+
+  function adminHeaders() {
+    const key = document.getElementById("adminKey").value || "";
+    return { "Content-Type": "application/json", "X-Admin-Key": key };
+  }
+
+  function uuid() {
+    return (crypto && crypto.randomUUID) ? crypto.randomUUID() : ("id-" + Math.random().toString(16).slice(2));
+  }
+
+  // ---------- State ----------
+  let cache = { weeks: [], daysByWeek: new Map(), settings: [] };
+  let selectedWeekId = "";
+  let selectedDayId = "";
+
+  // ---------- Load everything (export endpoint) ----------
+  async function loadAll() {
+    setStatus("topStatus","Loading…","");
+    try {
+      const res = await fetch("/api-admin/quests/export", { headers: adminHeaders() });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("topStatus", json.error || ("Error " + res.status), "error");
+        return;
+      }
+
+      // Build state
+      const weeks = json.weeks || [];
+      const days = json.days || [];
+      const settings = json.settings || [];
+
+      const daysByWeek = new Map();
+      for (const d of days) {
+        if (!daysByWeek.has(d.weekId)) daysByWeek.set(d.weekId, []);
+        daysByWeek.get(d.weekId).push(d);
+      }
+      for (const [k, v] of daysByWeek.entries()) {
+        v.sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+      }
+
+      cache = { weeks, daysByWeek, settings };
+
+      renderWeekList();
+      loadSettingsUI();
+
+      setStatus("topStatus","Loaded ✅","ok");
+      setStatus("weeksStatus","","");
+    } catch (e) {
+      setStatus("topStatus","Network error","error");
+    }
+  }
+
+  function loadSettingsUI() {
+    const gp = cache.settings.find(s => s.key === "grandPrize");
+    document.getElementById("grandPrize").value = gp ? gp.value : "";
+  }
+
+  // ---------- Week list ----------
+  function renderWeekList() {
+    const list = document.getElementById("weekList");
+    list.innerHTML = "";
+
+    const weeks = (cache.weeks || []).slice().sort((a,b)=>(b.startDate||"").localeCompare(a.startDate||""));
+    if (!weeks.length) {
+      list.innerHTML = `<div class="text-muted text-small">No weeks yet. Click New Week.</div>`;
+      return;
+    }
+
+    weeks.forEach(w => {
+      const div = document.createElement("div");
+      div.className = "list-group-item list-item " + (w.id === selectedWeekId ? "active" : "");
+      div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-bold">${escapeHtml(w.name)}</div>
+            <div class="text-muted text-small mono">${escapeHtml(w.id)}</div>
+          </div>
+          <div class="text-muted text-small">${escapeHtml(w.startDate)} → ${escapeHtml(w.endDate)}</div>
+        </div>
+      `;
+      div.onclick = () => selectWeek(w.id);
+      list.appendChild(div);
+    });
+  }
+
+  function selectWeek(weekId) {
+    selectedWeekId = weekId;
+    selectedDayId = "";
+
+    const w = cache.weeks.find(x => x.id === weekId);
+    if (!w) return;
+
+    document.getElementById("wId").value = w.id || "";
+    document.getElementById("wName").value = w.name || "";
+    document.getElementById("wStart").value = w.startDate || "";
+    document.getElementById("wEnd").value = w.endDate || "";
+    document.getElementById("wDesc").value = w.description || "";
+
+    renderWeekList();
+    renderDayList();
+    clearDayEditor();
+  }
+
+  // ---------- Day list ----------
+  function renderDayList() {
+    const list = document.getElementById("dayList");
+    list.innerHTML = "";
+
+    if (!selectedWeekId) {
+      list.innerHTML = `<div class="text-muted text-small">Select a week first.</div>`;
+      return;
+    }
+
+    const days = cache.daysByWeek.get(selectedWeekId) || [];
+    if (!days.length) {
+      list.innerHTML = `<div class="text-muted text-small">No missions yet. Click Add Mission.</div>`;
+      return;
+    }
+
+    days.forEach(d => {
+      const div = document.createElement("div");
+      div.className = "list-group-item list-item " + (d.id === selectedDayId ? "active" : "");
+      div.innerHTML = `
+        <div class="d-flex justify-content-between">
+          <div>
+            <div class="fw-bold">${escapeHtml(d.label || "DAY")} — ${escapeHtml(d.title || "")}</div>
+            <div class="text-muted text-small mono">${escapeHtml(d.voucherCode || "")}</div>
+          </div>
+          <div class="text-muted text-small">${escapeHtml(d.date || "")}</div>
+        </div>
+      `;
+      div.onclick = () => selectDay(d.id);
+      list.appendChild(div);
+    });
+  }
+
+  function selectDay(dayId) {
+    selectedDayId = dayId;
+    const days = cache.daysByWeek.get(selectedWeekId) || [];
+    const d = days.find(x => x.id === dayId);
+    if (!d) return;
+
+    document.getElementById("dId").value = d.id || "";
+    document.getElementById("dDate").value = d.date || "";
+    document.getElementById("dLabel").value = d.label || "";
+    document.getElementById("dTitle").value = d.title || "";
+    document.getElementById("dProvider").value = d.provider || "";
+    document.getElementById("dReward").value = d.reward || "";
+    document.getElementById("dVoucher").value = d.voucherCode || "";
+    document.getElementById("dAdminStatus").value = d.adminStatus || "auto";
+    document.getElementById("dFinalTag").value = d.finalTag || "";
+    document.getElementById("dTnc").value = (d.tnc || []).join("\n");
+
+    renderDayList();
+  }
+
+  function clearDayEditor() {
+    document.getElementById("dId").value = "";
+    document.getElementById("dDate").value = "";
+    document.getElementById("dLabel").value = "";
+    document.getElementById("dTitle").value = "";
+    document.getElementById("dProvider").value = "";
+    document.getElementById("dReward").value = "";
+    document.getElementById("dVoucher").value = "";
+    document.getElementById("dAdminStatus").value = "auto";
+    document.getElementById("dFinalTag").value = "";
+    document.getElementById("dTnc").value = "";
+    selectedDayId = "";
+    renderDayList();
+  }
+
+  // ---------- Actions ----------
+  document.getElementById("btnPing").addEventListener("click", loadAll);
+  document.getElementById("btnRefreshWeeks").addEventListener("click", loadAll);
+
+  document.getElementById("btnNewWeek").addEventListener("click", () => {
+    selectedWeekId = "";
+    selectedDayId = "";
+    document.getElementById("wId").value = "week-" + new Date().toISOString().slice(0,10);
+    document.getElementById("wName").value = "New Week";
+    document.getElementById("wStart").value = "";
+    document.getElementById("wEnd").value = "";
+    document.getElementById("wDesc").value = "Tap to view this week’s daily quests.";
+    clearDayEditor();
+  });
+
+  document.getElementById("btnSaveWeek").addEventListener("click", async () => {
+    const payload = {
+      id: (document.getElementById("wId").value || "").trim(),
+      name: (document.getElementById("wName").value || "").trim(),
+      startDate: (document.getElementById("wStart").value || "").trim(),
+      endDate: (document.getElementById("wEnd").value || "").trim(),
+      description: (document.getElementById("wDesc").value || "").trim()
+    };
+    if (!payload.id || !payload.name || !payload.startDate || !payload.endDate) {
+      setStatus("weekEditStatus","Missing required fields.","error"); return;
+    }
+
+    setStatus("weekEditStatus","Saving…","");
+    try {
+      const res = await fetch("/api-admin/week/upsert", {
+        method:"POST", headers: adminHeaders(), body: JSON.stringify(payload)
+      });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("weekEditStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+      setStatus("weekEditStatus","Saved ✅","ok");
+      selectedWeekId = payload.id;
+      await loadAll();
+      selectWeek(payload.id);
+    } catch {
+      setStatus("weekEditStatus","Network error","error");
+    }
+  });
+
+  document.getElementById("btnDeleteWeek").addEventListener("click", async () => {
+    const id = (document.getElementById("wId").value || "").trim();
+    if (!id) return;
+    if (!confirm("Delete this week and all missions?")) return;
+
+    setStatus("weekEditStatus","Deleting…","");
+    try {
+      const res = await fetch("/api-admin/week/delete", {
+        method:"POST", headers: adminHeaders(), body: JSON.stringify({ id })
+      });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("weekEditStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+      setStatus("weekEditStatus","Deleted ✅","ok");
+      selectedWeekId = "";
+      selectedDayId = "";
+      await loadAll();
+      clearDayEditor();
+    } catch {
+      setStatus("weekEditStatus","Network error","error");
+    }
+  });
+
+  document.getElementById("btnNewDay").addEventListener("click", () => {
+    if (!selectedWeekId) { setStatus("daysStatus","Select a week first.","error"); return; }
+    clearDayEditor();
+    document.getElementById("dId").value = uuid();
+    document.getElementById("dLabel").value = "DAY";
+    document.getElementById("dReward").value = "10 Free Spins";
+    document.getElementById("dVoucher").value = ("VOUCH-" + Math.random().toString(16).slice(2,10)).toUpperCase();
+    document.getElementById("dTnc").value = "Valid today only\nOne per player\nWagering applies";
+    setStatus("daysStatus","Fill fields and click Save Mission.","");
+  });
+
+  document.getElementById("btnSaveDay").addEventListener("click", async () => {
+    if (!selectedWeekId) { setStatus("dayEditStatus","Select a week first.","error"); return; }
+
+    const tnc = (document.getElementById("dTnc").value || "")
+      .split("\n").map(s=>s.trim()).filter(Boolean);
+
+    const payload = {
+      id: (document.getElementById("dId").value || "").trim(),
+      weekId: selectedWeekId,
+      date: (document.getElementById("dDate").value || "").trim(),
+      label: (document.getElementById("dLabel").value || "").trim(),
+      title: (document.getElementById("dTitle").value || "").trim(),
+      provider: (document.getElementById("dProvider").value || "").trim(),
+      reward: (document.getElementById("dReward").value || "").trim(),
+      voucherCode: (document.getElementById("dVoucher").value || "").trim(),
+      adminStatus: document.getElementById("dAdminStatus").value,
+      finalTag: document.getElementById("dFinalTag").value,
+      tnc
+    };
+
+    if (!payload.id || !payload.date || !payload.title || !payload.reward || !payload.voucherCode) {
+      setStatus("dayEditStatus","Missing required mission fields.","error"); return;
+    }
+
+    setStatus("dayEditStatus","Saving…","");
+    try {
+      const res = await fetch("/api-admin/day/upsert", {
+        method:"POST", headers: adminHeaders(), body: JSON.stringify(payload)
+      });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("dayEditStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+      setStatus("dayEditStatus","Saved ✅","ok");
+      selectedDayId = payload.id;
+      await loadAll();
+      selectWeek(selectedWeekId);
+      selectDay(payload.id);
+    } catch {
+      setStatus("dayEditStatus","Network error","error");
+    }
+  });
+
+  document.getElementById("btnDeleteDay").addEventListener("click", async () => {
+    const id = (document.getElementById("dId").value || "").trim();
+    if (!id) return;
+    if (!confirm("Delete this mission?")) return;
+
+    setStatus("dayEditStatus","Deleting…","");
+    try {
+      const res = await fetch("/api-admin/day/delete", {
+        method:"POST", headers: adminHeaders(), body: JSON.stringify({ id })
+      });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("dayEditStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+      setStatus("dayEditStatus","Deleted ✅","ok");
+      await loadAll();
+      selectWeek(selectedWeekId);
+      clearDayEditor();
+    } catch {
+      setStatus("dayEditStatus","Network error","error");
+    }
+  });
+
+  // Settings
+  document.getElementById("btnSavePrize").addEventListener("click", async () => {
+    const value = (document.getElementById("grandPrize").value || "").trim();
+    setStatus("settingsStatus","Saving…","");
+    try {
+      const res = await fetch("/api-admin/settings/set", {
+        method:"POST", headers: adminHeaders(), body: JSON.stringify({ key:"grandPrize", value })
+      });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("settingsStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+      setStatus("settingsStatus","Saved ✅","ok");
+    } catch {
+      setStatus("settingsStatus","Network error","error");
+    }
+  });
+
+  // Optins
+  document.getElementById("btnLoadOptins").addEventListener("click", loadOptins);
+
+  async function loadOptins() {
+    setStatus("optinsStatus","Loading…","");
+    const tbody = document.getElementById("optinTbody");
+    tbody.innerHTML = "";
+    try {
+      const res = await fetch("/api-admin/optins?limit=200", { headers: adminHeaders() });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("optinsStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+      const rows = json.rows || [];
+      rows.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(r.created_at || "")}</td>
+          <td class="mono">${escapeHtml(r.voucher_code || "")}</td>
+          <td>${escapeHtml(r.alias || "")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      setStatus("optinsStatus","Loaded "+rows.length+" rows.","ok");
+    } catch {
+      setStatus("optinsStatus","Network error","error");
+    }
+  }
+
+  // Export
+  document.getElementById("btnExport").addEventListener("click", async () => {
+    setStatus("exportStatus","Preparing…","");
+    try {
+      const res = await fetch("/api-admin/quests/export", { headers: adminHeaders() });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("exportStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+
+      const payload = JSON.stringify(json, null, 2);
+      const blob = new Blob([payload], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "quest_export.json";
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setStatus("exportStatus","Downloaded ✅","ok");
+    } catch {
+      setStatus("exportStatus","Network error","error");
+    }
+  });
+
+  // Import
+  document.getElementById("btnImport").addEventListener("click", async () => {
+    const file = document.getElementById("importFile").files?.[0];
+    if (!file) { setStatus("importStatus","Choose a JSON file first.","error"); return; }
+    if (!confirm("Import will REPLACE existing quests in D1. Continue?")) return;
+
+    setStatus("importStatus","Importing…","");
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+
+      const res = await fetch("/api-admin/quests/import", {
+        method:"POST", headers: adminHeaders(), body: JSON.stringify(payload)
+      });
+      const json = await res.json().catch(()=>({}));
+      if (!res.ok || !json.ok) {
+        setStatus("importStatus", json.error || ("Error "+res.status), "error"); return;
+      }
+      setStatus("importStatus","Imported ✅","ok");
+      await loadAll();
+    } catch (e) {
+      setStatus("importStatus","Invalid JSON or network error.","error");
+    }
+  });
+
+  // Basic escape
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;")
+      .replaceAll(">","&gt;").replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  // Auto-load when open (admin key required)
+  document.getElementById("btnPing").click();
+</script>
+
+</body>
+</html>
