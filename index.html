@@ -25,37 +25,86 @@
     }
     *{ box-sizing:border-box; }
     body{
-      background: radial-gradient(circle at 0 0, #111827 0%, #020617 55%, #000 100%);
-      color: var(--text);
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       margin:0;
       line-height:1.6;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color: var(--text);
+      background: radial-gradient(circle at 0 0, #111827 0%, #020617 55%, #000 100%);
+      overflow-x:hidden;
     }
     .container{ max-width:1200px; margin:0 auto; padding:20px; }
+
+    /* Subtle animated backdrop */
+    .fx-bg{
+      position:fixed;
+      inset:-40vh -40vw;
+      pointer-events:none;
+      z-index:-1;
+      background:
+        radial-gradient(600px 420px at 20% 20%, rgba(88,166,255,.18), transparent 70%),
+        radial-gradient(520px 380px at 80% 30%, rgba(227,179,65,.14), transparent 72%),
+        radial-gradient(640px 480px at 40% 85%, rgba(46,164,79,.12), transparent 75%);
+      filter: blur(10px);
+      animation: drift 12s ease-in-out infinite alternate;
+      opacity:.9;
+    }
+    @keyframes drift{
+      0%{ transform: translate3d(-1.5%, -1%, 0) scale(1.02); }
+      100%{ transform: translate3d(1.5%, 1%, 0) scale(1.06); }
+    }
 
     /* Top banner */
     #top-banner{
       background: linear-gradient(90deg, #1f2a3a 0%, #0d1117 100%);
       border-bottom: 5px solid var(--blue);
-      padding: 22px 26px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:16px;
+      padding: 18px 18px;
       box-shadow: 0 4px 15px rgba(0,0,0,.5);
+      position:sticky;
+      top:0;
+      z-index:50;
+      backdrop-filter: blur(8px);
     }
-    .banner-left h1{
+
+    /* 3-column header so title is truly centered */
+    .banner-grid{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items:center;
+      gap:12px;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .banner-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      min-height: 44px;
+    }
+    .banner-center{
+      text-align:center;
+      min-width: 180px;
+    }
+    .banner-center h1{
       color:#fff;
       font-size: 1.9em;
-      margin: 0 0 6px 0;
+      margin: 0;
       font-weight: 900;
       letter-spacing:.02em;
+      line-height:1.15;
     }
-    .banner-left p{
+    .banner-center p{
       color: var(--muted);
-      margin:0;
+      margin:6px 0 0 0;
       font-size:.98em;
     }
+    .banner-right{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      gap:10px;
+      min-height: 44px;
+    }
+
     .badge-pill{
       background: rgba(88,166,255,.16);
       border: 1px solid rgba(88,166,255,.35);
@@ -79,9 +128,34 @@
       display:block;
       font-size:1.02em;
     }
-    @media (max-width:768px){
-      #top-banner{ flex-direction:column; align-items:flex-start; }
-      .badge-pill{ width:100%; text-align:left; border-radius:14px; }
+
+    .nav-btn{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color:#fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 900;
+      letter-spacing:.02em;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      white-space:nowrap;
+      transition: transform .15s ease, border-color .2s ease;
+    }
+    .nav-btn:hover{ transform: translateY(-1px); border-color: rgba(88,166,255,.55); }
+    .nav-btn:active{ transform: translateY(0px); }
+
+    @media (max-width: 768px){
+      .banner-grid{
+        grid-template-columns: 1fr;
+        justify-items:stretch;
+        gap:10px;
+      }
+      .banner-left, .banner-right{ justify-content:space-between; }
+      .banner-center{ text-align:left; }
+      .badge-pill{ width:100%; text-align:left; border-radius:14px; min-width: 0; }
     }
 
     /* Sections */
@@ -117,11 +191,30 @@
       box-shadow: var(--shadow);
       position:relative;
       transition: transform .2s ease, border-color .2s ease, opacity .2s ease;
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: linear-gradient(120deg, transparent 0%, rgba(88,166,255,.10) 30%, transparent 60%);
+      transform: translateX(-60%);
+      opacity:0;
+      transition: opacity .2s ease;
+      pointer-events:none;
     }
     .card.clickable:hover{
       transform: translateY(-4px);
       border-color: rgba(88,166,255,.7);
       cursor:pointer;
+    }
+    .card.clickable:hover::before{
+      opacity:1;
+      animation: shine 1.2s ease forwards;
+    }
+    @keyframes shine{
+      0%{ transform: translateX(-70%); }
+      100%{ transform: translateX(70%); }
     }
     .card h3{
       margin:0 0 6px 0;
@@ -157,10 +250,24 @@
       pointer-events:none;
     }
 
-    /* Daily list */
-    #daily-section{
-      margin-top: 18px;
-      display:none;
+    /* Views + transitions */
+    .view{
+      opacity:1;
+      transform: translateY(0);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .view.hide{
+      opacity:0;
+      transform: translateY(10px);
+      pointer-events:none;
+      position:absolute;
+      left:-99999px;
+      top:0;
+    }
+
+    /* Daily section (separate "page") */
+    #daily-page{
+      display:block;
       border: 1px solid rgba(88,166,255,.35);
       background: rgba(22,27,34,.75);
       border-radius: 16px;
@@ -179,8 +286,9 @@
       border-radius: 12px;
       padding: 14px;
       position:relative;
-      transition: transform .2s ease, border-color .2s ease;
+      transition: transform .2s ease, border-color .2s ease, opacity .2s ease;
       min-height: 152px;
+      overflow:hidden;
     }
     .daily-card.clickable:hover{
       transform: translateY(-3px);
@@ -216,12 +324,24 @@
       color:#e5e7eb;
     }
     .status.today{ border-color: rgba(88,166,255,.6); background: rgba(88,166,255,.15); }
-    .status.past{ border-color: rgba(139,148,158,.5); background: rgba(139,148,158,.10); color: var(--muted); }
-    .status.future{ border-color: rgba(139,148,158,.5); background: rgba(139,148,158,.08); color: var(--muted); }
-    .status.done{ border-color: rgba(46,164,79,.55); background: rgba(46,164,79,.14); }
+    .status.locked{ border-color: rgba(139,148,158,.5); background: rgba(139,148,158,.10); color: var(--muted); }
+
     .dim{
-      opacity:.65;
-      filter: grayscale(.15);
+      opacity:.55;
+      filter: grayscale(.20);
+    }
+    .day-lock{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(229,231,235,.75);
+      font-weight: 900;
+      letter-spacing:.08em;
+      text-transform: uppercase;
+      background: rgba(0,0,0,.45);
+      pointer-events:none;
     }
 
     /* Modal */
@@ -242,6 +362,11 @@
       border-radius: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,.6);
       padding: 18px;
+      animation: pop .18s ease-out;
+    }
+    @keyframes pop{
+      from{ transform: translateY(8px) scale(.98); opacity:.7; }
+      to{ transform: translateY(0) scale(1); opacity:1; }
     }
     .modal-top{
       display:flex;
@@ -304,14 +429,18 @@
       font-weight: 800;
       letter-spacing:.02em;
       min-width: 140px;
+      transition: transform .15s ease, border-color .2s ease;
     }
     .btn.primary{
       border-color: rgba(88,166,255,.55);
       background: rgba(88,166,255,.18);
     }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(88,166,255,.55); }
+    .btn:active{ transform: translateY(0px); }
     .btn:disabled{
       opacity:.55;
       cursor:not-allowed;
+      transform:none;
     }
 
     .tnc{
@@ -362,41 +491,61 @@
 </head>
 
 <body>
-  <div id="top-banner">
-    <div class="banner-left">
-      <h1>Rico Quest</h1>
-      <p>Campaign preview page. Missions and details are managed in the admin console.</p>
-    </div>
+  <div class="fx-bg" aria-hidden="true"></div>
 
-    <div class="badge-pill" id="grandPrizePill" style="display:none;">
-      <span class="label">Weekly Highlight</span>
-      <span class="value" id="grandPrizeValue"></span>
-    </div>
-  </div>
-
-  <div class="container">
-    <div class="section-title">
-      <div>Weekly Overview</div>
-      <small id="todayLabel"></small>
-    </div>
-
-    <div class="weekly-grid" id="weeklyGrid"></div>
-
-    <hr class="divider" />
-
-    <section id="daily-section">
-      <div class="section-title" style="margin-top:0;">
-        <div id="dailyTitle">Daily Missions</div>
-        <small id="dailySubtitle"></small>
+  <header id="top-banner">
+    <div class="banner-grid">
+      <div class="banner-left">
+        <button class="nav-btn" id="backBtn" style="display:none;" title="Back">
+          ← Back
+        </button>
       </div>
 
+      <div class="banner-center">
+        <h1 id="headerTitle">Rico Quest</h1>
+        <p id="headerSubtitle">Campaign preview page. Missions and details are managed in the admin console.</p>
+      </div>
+
+      <div class="banner-right">
+        <div class="badge-pill" id="grandPrizePill" style="display:none;">
+          <span class="label">Weekly Highlight</span>
+          <span class="value" id="grandPrizeValue"></span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- WEEK PAGE -->
+    <section id="week-page" class="view">
+      <div class="section-title">
+        <div>Weekly Overview</div>
+        <small id="todayLabel"></small>
+      </div>
+
+      <div class="weekly-grid" id="weeklyGrid"></div>
+      <hr class="divider" />
       <div class="hint">
-        Tip: This page is for viewing mission details. If you’re testing, you can copy the event code for reference.
+        Tap an <b>Active</b> week to open the Daily Quest page.
       </div>
-
-      <div class="daily-grid" id="dailyGrid"></div>
     </section>
-  </div>
+
+    <!-- DAILY PAGE (separate "page" via URL param) -->
+    <section id="daily-view" class="view hide">
+      <div id="daily-page">
+        <div class="section-title" style="margin-top:0;">
+          <div id="dailyTitle">Daily Quest</div>
+          <small id="dailySubtitle"></small>
+        </div>
+
+        <div class="hint">
+          Only <b>today’s</b> quest is unlocked. Past days are locked and cannot be opened.
+        </div>
+
+        <div class="daily-grid" id="dailyGrid"></div>
+      </div>
+    </section>
+  </main>
 
   <!-- Modal -->
   <div class="modal" id="modal">
@@ -471,6 +620,31 @@
       setTimeout(() => (el.style.display = "none"), 1600);
     }
 
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function setView(which) {
+      const weekPage = document.getElementById("week-page");
+      const dailyView = document.getElementById("daily-view");
+      const backBtn = document.getElementById("backBtn");
+
+      if (which === "daily") {
+        weekPage.classList.add("hide");
+        dailyView.classList.remove("hide");
+        backBtn.style.display = "inline-flex";
+      } else {
+        dailyView.classList.add("hide");
+        weekPage.classList.remove("hide");
+        backBtn.style.display = "none";
+      }
+    }
+
     // =========================
     // State
     // =========================
@@ -478,7 +652,6 @@
     document.getElementById("todayLabel").textContent = `Today: ${todayStr}`;
 
     const weeklyGrid = document.getElementById("weeklyGrid");
-    const dailySection = document.getElementById("daily-section");
     const dailyGrid = document.getElementById("dailyGrid");
     const dailyTitle = document.getElementById("dailyTitle");
     const dailySubtitle = document.getElementById("dailySubtitle");
@@ -493,9 +666,32 @@
     const modalRewardTag = document.getElementById("modalRewardTag");
     const copyBtn = document.getElementById("copyBtn");
 
+    const backBtn = document.getElementById("backBtn");
+
     let weeklyQuests = [];
     let activeWeek = null;
     let selectedMission = null;
+
+    // URL param = "redirect to another page"
+    function getWeekParam() {
+      const u = new URL(window.location.href);
+      return u.searchParams.get("week") || "";
+    }
+    function goToWeek(weekId) {
+      const u = new URL(window.location.href);
+      u.searchParams.set("week", weekId);
+      window.history.pushState({}, "", u.toString());
+      route();
+    }
+    function goHome() {
+      const u = new URL(window.location.href);
+      u.searchParams.delete("week");
+      window.history.pushState({}, "", u.toString());
+      route();
+    }
+
+    backBtn.addEventListener("click", goHome);
+    window.addEventListener("popstate", route);
 
     // =========================
     // Backend fetch
@@ -511,6 +707,7 @@
         if (!Array.isArray(data)) {
           weeklyGrid.innerHTML = "";
           weeklyGrid.appendChild(makeInfoCard("No data yet. Configure weeks in admin console."));
+          weeklyQuests = [];
           return;
         }
 
@@ -528,10 +725,6 @@
         }
 
         renderWeeklyCards();
-
-        // Auto-select current week if any
-        const runningWeek = weeklyQuests.find(w => todayStr >= w.startDate && todayStr <= w.endDate);
-        if (runningWeek) showDailyMissions(runningWeek);
 
       } catch (e) {
         weeklyGrid.innerHTML = "";
@@ -578,8 +771,10 @@
         } else {
           locked = false;
           statusTag = `<span class="tag green">Active</span>`;
-          hint = "Tap to view the daily missions for this week.";
+          hint = "Tap to open the Daily Quest page for this week.";
         }
+
+        const id = String(week.id || week.name || `${start}_${end}`);
 
         const card = document.createElement("div");
         card.className = "card " + (locked ? "" : "clickable");
@@ -593,20 +788,32 @@
           ${locked ? `<div class="lock-overlay">Not started</div>` : ""}
         `;
 
-        if (!locked) card.onclick = () => showDailyMissions(week);
+        if (!locked) {
+          card.onclick = () => goToWeek(id);
+        }
         weeklyGrid.appendChild(card);
       });
     }
 
+    function findWeekByParam(weekParam) {
+      if (!weekParam) return null;
+      // match by id or name or computed fallback
+      return weeklyQuests.find(w => String(w.id || "") === weekParam)
+        || weeklyQuests.find(w => String(w.name || "") === weekParam)
+        || weeklyQuests.find(w => String((w.id || w.name || `${w.startDate}_${w.endDate}`)) === weekParam)
+        || null;
+    }
+
     // =========================
-    // Daily cards
+    // Daily cards (ONLY unlock TODAY)
     // =========================
-    function showDailyMissions(week) {
+    function renderDailyForWeek(week) {
       activeWeek = week;
-      dailyTitle.textContent = `Daily Missions — ${week.name || week.id || ""}`;
+
+      dailyTitle.textContent = `Daily Quest — ${week.name || week.id || ""}`;
       dailySubtitle.textContent = `${week.startDate} → ${week.endDate}`;
+
       dailyGrid.innerHTML = "";
-      dailySection.style.display = "block";
 
       const days = Array.isArray(week.days) ? week.days : [];
       if (!days.length) {
@@ -616,34 +823,15 @@
 
       days.forEach(mission => {
         const missionDateStr = mission.date || "";
-        const key = `mission-seen-${mission.voucherCode || mission.id || ""}`;
 
-        // purely local UI marker
-        const seen = localStorage.getItem(key) === "1";
-
-        let statusClass = "future";
-        let statusLabel = "Scheduled";
-        let clickable = false;
-
-        if (missionDateStr < todayStr) {
-          statusClass = seen ? "done" : "past";
-          statusLabel = seen ? "Viewed" : "Past";
-          clickable = true; // allow viewing details
-        } else if (missionDateStr === todayStr) {
-          statusClass = "today";
-          statusLabel = "Today";
-          clickable = true;
-        } else {
-          statusClass = "future";
-          statusLabel = "Soon";
-          clickable = false; // keep simple and reduce incentive flow
-        }
+        const isToday = (missionDateStr === todayStr);
+        const isLocked = !isToday; // lock past + future
 
         const card = document.createElement("div");
-        card.className = "daily-card " + (clickable ? "clickable" : "dim");
+        card.className = "daily-card " + (isLocked ? "dim" : "clickable");
 
         card.innerHTML = `
-          <div class="status ${statusClass}">${statusLabel}</div>
+          <div class="status ${isLocked ? "locked" : "today"}">${isLocked ? "Locked" : "Today"}</div>
           <h4>${escapeHtml(mission.label || "DAY")} — ${escapeHtml(mission.title || "")}</h4>
           <div class="kv">
             <span><b>Date:</b> ${escapeHtml(missionDateStr)}</span>
@@ -651,18 +839,16 @@
             <span><b>Reward:</b> ${escapeHtml(mission.reward || "—")}</span>
           </div>
           <p style="margin:0; color: var(--muted); font-size:.88em;">
-            ${escapeHtml((mission.tnc && mission.tnc[0]) ? mission.tnc[0] : "Details available in modal.")}
+            ${escapeHtml((mission.tnc && mission.tnc[0]) ? mission.tnc[0] : "Details available in modal for today only.")}
           </p>
+          ${isLocked ? `<div class="day-lock">Locked</div>` : ``}
         `;
 
-        if (clickable) {
+        if (!isLocked) {
           card.onclick = () => openModal(mission);
         }
         dailyGrid.appendChild(card);
       });
-
-      // Scroll into view on selection
-      dailySection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     // =========================
@@ -680,18 +866,12 @@
       modalRewardTag.style.display = mission.reward ? "inline-flex" : "none";
       modalRewardTag.textContent = mission.reward ? `Reward: ${mission.reward}` : "";
 
-      // "Event Code" wording (safer than voucher/redeem/activate)
       modalCode.textContent = mission.voucherCode || "—";
 
-      // Rules
       const tnc = Array.isArray(mission.tnc) ? mission.tnc : [];
       modalTnc.innerHTML = tnc.length
         ? tnc.map(x => `<li>${escapeHtml(x)}</li>`).join("")
         : `<li>${escapeHtml("No additional notes configured.")}</li>`;
-
-      // mark as seen (local only)
-      const key = `mission-seen-${mission.voucherCode || mission.id || ""}`;
-      localStorage.setItem(key, "1");
 
       modal.style.display = "block";
     }
@@ -699,9 +879,6 @@
     function closeModal() {
       modal.style.display = "none";
       selectedMission = null;
-
-      // refresh daily view to show "Viewed" state
-      if (activeWeek) showDailyMissions(activeWeek);
     }
 
     modalClose.addEventListener("click", closeModal);
@@ -728,7 +905,6 @@
         showToast("Copy failed");
       }
 
-      // Optional logging (disabled by default)
       if (ENABLE_PUBLIC_LOGGING) {
         try {
           await fetch("/api/quests/optin", {
@@ -736,28 +912,54 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               voucherCode: code,
-              alias: "" // optional, keep empty for safety
+              alias: ""
             })
           });
         } catch (e) {
-          // silently ignore
           console.warn("log failed", e);
         }
       }
     });
 
-    // Basic escape for any server-provided strings
-    function escapeHtml(str) {
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+    // =========================
+    // Router: week page vs daily page
+    // =========================
+    function route() {
+      const weekParam = getWeekParam();
+
+      if (!weekParam) {
+        document.getElementById("headerTitle").textContent = "Rico Quest";
+        document.getElementById("headerSubtitle").textContent =
+          "Campaign preview page. Missions and details are managed in the admin console.";
+        setView("weeks");
+        return;
+      }
+
+      const week = findWeekByParam(weekParam);
+      if (!week) {
+        // fallback: invalid param -> go home
+        goHome();
+        return;
+      }
+
+      document.getElementById("headerTitle").textContent = "Daily Quest";
+      document.getElementById("headerSubtitle").textContent =
+        (week.name || week.id) ? `Week: ${week.name || week.id}` : "Week details";
+
+      renderDailyForWeek(week);
+      setView("daily");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     // Init
-    document.addEventListener("DOMContentLoaded", loadWeeks);
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadWeeks();
+
+      // If URL doesn't specify a week, optionally auto-select current running week
+      // but DO NOT auto-navigate (you wanted click -> redirect).
+      // So we only route to daily view if the URL already has ?week=...
+      route();
+    });
   </script>
 </body>
 </html>
